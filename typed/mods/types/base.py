@@ -14,5 +14,5 @@ class Any(type):
     def __subclasscheck__(self, subclass):
         return True
 
-Json = Union(Dict(Str, Any), Set(Any), List(Any))
+Json = Union(Dict(Any), Set(Any), List(Any))
 Path = Regex(r"^/?(?:[^/:\r\n*?\"<>|\\]+/)*[^/:\r\n*?\"<>|\\]+/?$")
