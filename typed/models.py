@@ -24,7 +24,7 @@ def Model(**kwargs: Type) -> Type[Json]:
     Concatenation of Models is supported.
     """
     if not kwargs:
-        return Json
+        return dict
 
     if not all(isinstance(key, str) for key in kwargs.keys()):
         raise TypeError("All arguments to Model must be strings representing attribute names.")
@@ -129,7 +129,7 @@ def Model(**kwargs: Type) -> Type[Json]:
 
     args_str = ", ".join(f"{key}: {getattr(value, '__name__', str(value))}" if not isinstance(value, _OptionalWrapper) else f"{key}: {getattr(value.type, '__name__', str(value.type))} = {repr(value.default_value)}" for key, value in kwargs.items())
     class_name = f"Model({args_str})"
-    return __Model(class_name, (Json,), {
+    return __Model(class_name, (dict,), {
         '_initial_attributes_and_types': attributes_and_types,
         '_initial_required_attribute_keys': required_attribute_keys,
         '_initial_optional_attributes_and_defaults': optional_attributes_and_defaults
@@ -147,7 +147,7 @@ def ExactModel(**kwargs: Type) -> Type[Json]:
     Concatenation of ExactModels is supported.
     """
     if not kwargs:
-        return Json
+        return dict
 
     if not all(isinstance(key, str) for key in kwargs.keys()):
         raise TypeError("All arguments to ExactModel must be strings representing attribute names.")
@@ -301,7 +301,7 @@ def ExactModel(**kwargs: Type) -> Type[Json]:
     args_str = ", ".join(f"{key}: {getattr(value, '__name__', str(value))}" if not isinstance(value, _OptionalWrapper) else f"{key}: {getattr(value.type, '__name__', str(value.type))} = {repr(value.default_value)}" for key, value in kwargs.items())
     class_name = f"ExactModel({args_str})"
 
-    return __ExactModel(class_name, (Json,), {
+    return __ExactModel(class_name, (dict,), {
         '_initial_attributes_and_types': attributes_and_types,
         '_initial_required_attribute_keys': required_attribute_keys,
         '_initial_optional_attributes_and_defaults': optional_attributes_and_defaults,
@@ -311,13 +311,20 @@ def ExactModel(**kwargs: Type) -> Type[Json]:
 AnyModel = Model()
 
 def Instance(entity: dict, model: Type) -> Any:
-    if not isinstance(model, type) or not issubclass(model, AnyModel):
-        raise TypeError(f"'{model.__name__}' not of Model or ExactModel types. Received type: {type(model).__name__}.")
+    # Get the metaclass of the provided model
+    model_metaclass = type(model)
+
+    # Check if the model's metaclass is __Model or __ExactModel
+    if not isinstance(model, type) or (model_metaclass.__name__ != "__Model" and model_metaclass.__name__ != "__ExactModel"):
+         raise TypeError(f"'{getattr(model, '__name__', str(model))}' not of Model or ExactModel types. Received type: {type(model).__name__}.")
 
     if not isinstance(entity, dict):
-        raise TypeError(f"'{entity.__name__}': not of Json type. Received type: {type(model).__name__}.")
+        # Changed the error message to reflect the actual type received
+        raise TypeError(f"'{getattr(entity, '__name__', str(entity))}': not of Json type. Received type: {type(entity).__name__}.")
+
 
     if isinstance(entity, model):
         return entity
     else:
-        raise TypeError(f"'{entity.__name__}': not an instance of {model.__name__}.")
+        # Changed the error message to be more informative
+        raise TypeError(f"'{getattr(entity, '__name__', str(entity))}': not an instance of {model.__name__}.")
